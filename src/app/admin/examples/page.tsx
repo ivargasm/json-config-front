@@ -5,6 +5,7 @@ import ProtectedRoute from "../../components/ProtectedRoutes";
 import TopNavbar from "../../components/TopNavbar";
 import { toast } from "sonner";
 import { fetchKnowledgeBase, fetchQueries, saveQuery, deleteQuery, updateQuery } from "../../lib/api";
+import { useAuthStore } from "../../store/Store";
 import { BrainCircuit, LineChart, Target, CheckCircle2, Play, Edit3, Trash2, Plus, Code2, Download, UploadCloud, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function ExamplesPage() {
@@ -18,6 +19,7 @@ export default function ExamplesPage() {
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [queryToDelete, setQueryToDelete] = useState<number | null>(null);
+  const user = useAuthStore(state => state.user);
   const [expandedCards, setExpandedCards] = useState<{[key: number]: boolean}>({});
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
@@ -256,18 +258,22 @@ export default function ExamplesPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleEdit(q); }} 
-                          className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 px-3 py-1.5 rounded-md text-xs font-medium transition-colors shadow-sm"
-                        >
-                          <Edit3 size={14} /> Editar
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); confirmDelete(q.id); }} 
-                          className="flex items-center gap-1.5 bg-white border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200 px-3 py-1.5 rounded-md text-xs font-medium transition-colors shadow-sm"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {q.user_id === Number(user?.id) && (
+                          <>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleEdit(q); }} 
+                              className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 px-3 py-1.5 rounded-md text-xs font-medium transition-colors shadow-sm"
+                            >
+                              <Edit3 size={14} /> Editar
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); confirmDelete(q.id); }} 
+                              className="flex items-center gap-1.5 bg-white border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200 px-3 py-1.5 rounded-md text-xs font-medium transition-colors shadow-sm"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        )}
                         <div className="text-slate-400 ml-2">
                           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                         </div>

@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import ProtectedRoute from "../../components/ProtectedRoutes";
 import { fetchKnowledgeBase, saveKnowledgeBase } from "../../lib/api";
+import { useAuthStore } from "../../store/Store";
 import TopNavbar from "../../components/TopNavbar";
 import { Database, Trash2, Plus, Upload, Save, ChevronDown, ChevronUp, FileCode, Zap, LayoutTemplate } from "lucide-react";
 
@@ -188,11 +189,13 @@ function TableCard({ control, register, index, remove, errors, watch }: any) {
 export default function SchemasPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const user = useAuthStore(state => state.user);
+  
   const [showDdlModal, setShowDdlModal] = useState(false);
   const [ddlInput, setDdlInput] = useState("");
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
-  const { control, register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<GlobalSchemaForm>({
+  const { control, register, handleSubmit, formState: { errors, isDirty }, reset, watch, setValue } = useForm<GlobalSchemaForm>({
     resolver: zodResolver(globalSchema),
     defaultValues: { schema_data: [] },
   });
@@ -208,6 +211,7 @@ export default function SchemasPage() {
         const schemas = await fetchKnowledgeBase(backendUrl);
         if (schemas && schemas.length > 0) {
           reset({ schema_data: schemas[0].schema_data });
+            
         }
       } catch (err) {
         toast.error("Error al cargar la base de conocimiento");
@@ -222,6 +226,7 @@ export default function SchemasPage() {
     setIsSaving(true);
     try {
       await saveKnowledgeBase(backendUrl, data.schema_data);
+        reset(data);
       toast.success("Cerebro Global actualizado correctamente");
     } catch (err: any) {
       toast.error(err.message || "Error al guardar");
@@ -349,6 +354,18 @@ export default function SchemasPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)}>
+              {isDirty && (
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3 shadow-sm animate-pulse">
+                  <Zap className="text-amber-500 shrink-0 mt-0.5" size={20} />
+                  <div>
+                    <h4 className="text-sm font-bold text-amber-800">Tienes cambios sin guardar</h4>
+                    <p className="text-xs text-amber-700 mt-1">
+                      Has modificado, agregado o eliminado tablas. Los cambios no se aplicarn hasta que hagas clic en <strong>Sincronizar Cambios</strong>.
+                    </p>
+                  </div>
+                </div>
+              )}
+
             
             {/* FAST IMPORT BANNER */}
             <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-5 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -384,8 +401,8 @@ export default function SchemasPage() {
                </div>
                <button
                   type="submit"
-                  disabled={isSaving}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium text-sm shadow-sm transition-colors disabled:opacity-50"
+                  disabled={isSaving || !isDirty}
+                  className={`flex items-center gap-2 px-6 py-2 rounded-md font-medium text-sm shadow-sm transition-colors ${isDirty ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                 >
                   <Save size={16} /> {isSaving ? "Guardando..." : "Sincronizar Cambios"}
                 </button>
