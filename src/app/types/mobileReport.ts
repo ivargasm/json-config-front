@@ -40,6 +40,8 @@ export interface ResumeColumn {
 
 export interface ResumeRow {
     description: string;
+    detail_link_id?: number | string;
+    nav_params?: Record<string, string>;
     columns: ResumeColumn[];
 }
 
@@ -76,6 +78,28 @@ export interface ReportComponent {
     
     // Shared common
     collapsed?: boolean;
+    
+    // Interaction & Navigation
+    nav_params?: Record<string, string>;
+    show_when?: {
+        param: string;
+        value?: string | number;
+        present?: boolean;
+    };
+    hide_when?: {
+        param: string;
+        value?: string | number;
+        present?: boolean;
+    };
+    detail?: {
+        type: string;
+        schema?: string;
+        label?: string;
+        list_label?: string;
+        columns?: any[];
+        datasource?: string;
+        [key: string]: any;
+    };
     
     // Table/Resume
     column_titles?: string[];

@@ -195,3 +195,18 @@ export async function verifyRegister(email: string, code: string, url: string) {
     }
     return res.json();
 }
+
+
+export const sendMobileReportChat = async (messages: any[], components: any[], url: string) => {
+    const res = await fetch(`${url}/ai/mobile-report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ messages, components })
+    });
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.detail || 'Error en el servidor');
+    }
+    return res.json();
+};

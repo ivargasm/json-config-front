@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useMobileReportStore } from "../../store/mobileReportStore";
-import { Database, Code2, Settings, Plus, Trash2, Zap } from "lucide-react";
+import { Database, Code2, Settings, Plus, Trash2, Zap, Eye } from "lucide-react";
 import { TableColumn, ResumeRow } from "../../types/mobileReport";
 import { toast } from "sonner";
 import { parseColumns } from "../../lib/api";
@@ -394,6 +394,10 @@ export default function ComponentConfigurator({ componentId }: { componentId: st
       case "metric_section":
         return (
           <div className="space-y-4">
+            <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-md text-emerald-800 text-xs leading-relaxed">
+              <strong>Reglas de Color (Semforo)</strong><br/>
+              Define a partir de qu porcentaje cambia de color el nmero. Ej: Si configuras <b>Success Min</b> en <code>0.9</code> y <b>Warning Min</b> en <code>0.6</code>, la mrica ser Verde arriba de 90%, Amarilla arriba de 60%, y Roja por debajo.
+            </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">Layout</label>
@@ -662,7 +666,120 @@ export default function ComponentConfigurator({ componentId }: { componentId: st
         </div>
       )}
 
+      
       <div className="pt-4 border-t border-slate-100">
+        <h4 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+          <Eye size={16} className="text-indigo-600" /> Reglas de Visualizacion (Interacciones)
+        </h4>
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-4">
+          <div className="bg-blue-50 border border-blue-200 p-3 rounded-md text-blue-800 text-xs leading-relaxed">
+            <strong>Como funcionan las interacciones?</strong><br/>
+            Esta sección te permite crear navegaciones y vistas anidadas sin programar. Cuando el usuario final interactúa con ciertos componentes (como darle clic a una fila del Resumen o a un Carrusel), el sistema guarda "Parmetros" temporales en memoria (ej. <code>pilar = av</code> o <code>placeId = 123</code>).<br/>
+            Aquí puedes configurar tu componente para que reaccione a esos clics, dicindole: <em>"Aparece solo si el pilar es igual a av"</em> o <em>"Ocultate si ya hay una tienda seleccionada"</em>.
+          </div>
+          
+          {/* Mostrar Cuando */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-3 border border-slate-100 rounded shadow-sm">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Mostrar Componente...</label>
+              <select 
+                value={!component.show_when ? "always" : (component.show_when.present === false ? "not_present" : (component.show_when.present === true ? "present" : "value"))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const p = component.show_when?.param || "";
+                  if (val === "always") updateComponent(component.id, { show_when: undefined });
+                  else if (val === "present") updateComponent(component.id, { show_when: { param: p, present: true } });
+                  else if (val === "not_present") updateComponent(component.id, { show_when: { param: p, present: false } });
+                  else if (val === "value") updateComponent(component.id, { show_when: { param: p, value: "" } });
+                }}
+                className="w-full border border-slate-200 rounded-md px-3 py-1.5 text-sm"
+              >
+                <option value="always">Siempre (Por defecto)</option>
+                <option value="present">Si existe un parametro</option>
+                <option value="not_present">Si NO existe un parametro</option>
+                <option value="value">Si tiene valor exacto</option>
+              </select>
+            </div>
+            
+            {component.show_when && (
+               <>
+                 <div>
+                   <label className="block text-xs font-semibold text-slate-600 mb-1">Nombre del Parametro (nav_param)</label>
+                   <input 
+                     value={component.show_when.param || ""} 
+                     onChange={(e) => updateComponent(component.id, { show_when: { value: component.show_when?.value, present: component.show_when?.present, param: e.target.value } })}
+                     placeholder="Ej: pilar" 
+                     className="w-full border border-slate-200 rounded-md px-3 py-1.5 text-sm font-mono" 
+                   />
+                 </div>
+                 {component.show_when.value !== undefined && (
+                   <div>
+                     <label className="block text-xs font-semibold text-slate-600 mb-1">Valor Exacto Esperado</label>
+                     <input 
+                       value={component.show_when.value as string || ""} 
+                       onChange={(e) => updateComponent(component.id, { show_when: { param: component.show_when?.param || "", ...component.show_when, value: e.target.value } })}
+                       placeholder="Ej: av" 
+                       className="w-full border border-slate-200 rounded-md px-3 py-1.5 text-sm font-mono" 
+                     />
+                   </div>
+                 )}
+               </>
+            )}
+          </div>
+
+          {/* Ocultar Cuando */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-3 border border-slate-100 rounded shadow-sm">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Ocultar Componente...</label>
+              <select 
+                value={!component.hide_when ? "never" : (component.hide_when.present === false ? "not_present" : (component.hide_when.present === true ? "present" : "value"))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const p = component.hide_when?.param || "";
+                  if (val === "never") updateComponent(component.id, { hide_when: undefined });
+                  else if (val === "present") updateComponent(component.id, { hide_when: { param: p, present: true } });
+                  else if (val === "not_present") updateComponent(component.id, { hide_when: { param: p, present: false } });
+                  else if (val === "value") updateComponent(component.id, { hide_when: { param: p, value: "" } });
+                }}
+                className="w-full border border-slate-200 rounded-md px-3 py-1.5 text-sm"
+              >
+                <option value="never">Nunca (Por defecto)</option>
+                <option value="present">Si existe un parametro</option>
+                <option value="not_present">Si NO existe un parametro</option>
+                <option value="value">Si tiene valor exacto</option>
+              </select>
+            </div>
+            
+            {component.hide_when && (
+               <>
+                 <div>
+                   <label className="block text-xs font-semibold text-slate-600 mb-1">Nombre del Parametro</label>
+                   <input 
+                     value={component.hide_when.param || ""} 
+                     onChange={(e) => updateComponent(component.id, { hide_when: { value: component.hide_when?.value, present: component.hide_when?.present, param: e.target.value } })}
+                     placeholder="Ej: placeId" 
+                     className="w-full border border-slate-200 rounded-md px-3 py-1.5 text-sm font-mono" 
+                   />
+                 </div>
+                 {component.hide_when.value !== undefined && (
+                   <div>
+                     <label className="block text-xs font-semibold text-slate-600 mb-1">Valor Exacto Esperado</label>
+                     <input 
+                       value={component.hide_when.value as string || ""} 
+                       onChange={(e) => updateComponent(component.id, { hide_when: { param: component.hide_when?.param || "", ...component.hide_when, value: e.target.value } })}
+                       placeholder="Ej: av" 
+                       className="w-full border border-slate-200 rounded-md px-3 py-1.5 text-sm font-mono" 
+                     />
+                   </div>
+                 )}
+               </>
+            )}
+          </div>
+
+        </div>
+      </div>
+
+<div className="pt-4 border-t border-slate-100">
         <h4 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <Settings size={16} className="text-indigo-600" /> Configuración Específica
         </h4>

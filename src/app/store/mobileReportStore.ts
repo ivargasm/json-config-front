@@ -2,11 +2,21 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ReportComponent, GenericFilter, FilterProperties, ParsedColumn, DefaultValue } from '../types/mobileReport';
 
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 interface MobileReportState {
     // Filters State
     filters: string[];
     generic_filters: GenericFilter[];
     filters_properties: Record<string, FilterProperties>;
+    
+        // Chat State
+    chatMessages: ChatMessage[];
+    setChatMessages: (updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => void;
     
     // Components State
     components: ReportComponent[];
@@ -25,6 +35,7 @@ interface MobileReportState {
     removeComponent: (id: string) => void;
     setParsedColumns: (id: string, columns: ParsedColumn[]) => void;
     clearComponents: () => void;
+    setComponents: (components: ReportComponent[]) => void;
     
     // Global Actions
     loadFromJSON: (data: any) => void;
@@ -38,6 +49,18 @@ export const useMobileReportStore = create<MobileReportState>()(
     generic_filters: [],
     filters_properties: {},
     components: [],
+    // Chat State
+    chatMessages: [
+      { 
+        role: 'assistant', 
+        content: '¡Hola! Soy tu Asistente IA Arquitecto de Reportes.\n\n**¿Qué SÍ puedo hacer?**\n✅ Crear o eliminar componentes visuales.\n✅ Configurar colores, semáforos y reglas de ocultamiento (`show_when`).\n✅ Conectar interacciones (ej. "Al dar clic aquí, muestra este otro componente").\n\n**¿Qué NO puedo hacer?**\n❌ No genero código SQL. Si me pides un componente nuevo, yo te armaré el "cascarón" perfecto y tú deberás usar el Asistente SQL (en la pestaña Estructura) para inyectarle los datos.\n\n¿Qué quieres que construyamos hoy?' 
+      }
+    ],
+    setChatMessages: (updater) => set((state) => ({
+      chatMessages: typeof updater === 'function' ? updater(state.chatMessages) : updater
+    })),
+
+    // Components State
 
     addFilter: (filter) =>
         set((state) => ({
@@ -120,6 +143,7 @@ export const useMobileReportStore = create<MobileReportState>()(
         })),
 
     clearComponents: () => set({ components: [] }),
+    setComponents: (components) => set({ components }),
 
     loadFromJSON: (data) =>
         set({

@@ -4,15 +4,18 @@ import { useState } from "react";
 import ProtectedRoute from "../components/ProtectedRoutes";
 import TopNavbar from "../components/TopNavbar";
 import { useMobileReportStore } from "../store/mobileReportStore";
-import { Code2, Settings2, Plus, LayoutList, Download, Copy, Play, Check, X, Upload, FileCode } from "lucide-react";
+import { Code2, Settings2, Plus, LayoutList, Download, Copy, Play, Check, X, Upload, FileCode, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import GlobalFiltersForm from "./components/GlobalFiltersForm";
 import ComponentConfigurator from "./components/ComponentConfigurator";
 import AddComponentModal from "./components/AddComponentModal";
+import LivePreview from "./components/LivePreview";
+import AIChatPanel from "./components/AIChatPanel";
 
 export default function MobileReportBuilder() {
   const { filters, components, removeComponent, exportJSON } = useMobileReportStore();
   const [selectedItem, setSelectedItem] = useState<string>("filters");
+  const [leftTab, setLeftTab] = useState<"build" | "ai">("build");
   const [jsonDrawerOpen, setJsonDrawerOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   
@@ -76,7 +79,7 @@ export default function MobileReportBuilder() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden flex flex-col">
+      <div className="h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden flex flex-col">
         <TopNavbar />
         
         {/* Toolbar */}
@@ -107,13 +110,27 @@ export default function MobileReportBuilder() {
         {/* Workspace */}
         <div className="flex flex-1 overflow-hidden">
           
-          {/* Left Sidebar - Component Tree */}
-          <div className="w-72 bg-white border-r border-slate-200 flex flex-col z-0 shadow-sm relative">
-            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Estructura</span>
+          {/* Left Sidebar - Component Tree & AI */}
+          <div className="w-[320px] bg-white border-r border-slate-200 flex flex-col z-0 shadow-sm relative shrink-0">
+            
+            <div className="flex border-b border-slate-200 bg-white">
+              <button 
+                onClick={() => setLeftTab('build')}
+                className={`flex-1 p-3 text-xs font-bold uppercase tracking-widest text-center transition-colors ${leftTab === 'build' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-slate-50' : 'text-slate-400 hover:bg-slate-50 border-b-2 border-transparent'}`}
+              >
+                Estructura
+              </button>
+              <button 
+                onClick={() => setLeftTab('ai')}
+                className={`flex-1 p-3 text-xs font-bold uppercase tracking-widest text-center flex items-center justify-center gap-1.5 transition-colors ${leftTab === 'ai' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-400 hover:bg-slate-50 border-b-2 border-transparent'}`}
+              >
+                <Sparkles size={14} /> Asistente IA
+              </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-3 space-y-1">
+            {leftTab === 'build' ? (
+              <>
+                <div className="flex-1 overflow-y-auto p-3 space-y-1">
               {/* Base / Filters */}
               <button 
                 onClick={() => setSelectedItem("filters")}
@@ -149,10 +166,14 @@ export default function MobileReportBuilder() {
                 <Plus size={16} /> Añadir Componente
               </button>
             </div>
+              </>
+            ) : (
+              <AIChatPanel />
+            )}
           </div>
 
           {/* Main Configuration Canvas */}
-          <div className="flex-1 overflow-y-auto bg-slate-50 p-8 relative">
+          <div className="flex-1 overflow-y-auto bg-slate-50 p-8 relative hide-scrollbar">
             
             <div className="max-w-4xl mx-auto">
               {selectedItem === "filters" ? (
@@ -187,6 +208,8 @@ export default function MobileReportBuilder() {
             </div>
             
           </div>
+          {/* Live Preview Pane */}
+          <LivePreview />
         </div>
       </div>
 
