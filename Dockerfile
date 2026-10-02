@@ -1,16 +1,23 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies only when needed
-# We copy package files to install dependencies during the build
+# Instalar dependencias
 COPY package.json package-lock.json* ./
 RUN npm install
 
-# We do not COPY the rest of the application code because we use Docker volumes 
-# for hot-reloading in development.
+# Copiar el código fuente
+COPY . .
+
+# Argumento para que Next.js incruste la URL del backend durante el build
+ARG NEXT_PUBLIC_BACKEND_URL
+ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
+
+# Compilar para producción
+RUN npm run build
 
 EXPOSE 3000
+ENV NODE_ENV=production
 
-# Next.js development server
-CMD ["npm", "run", "dev"]
+# Arrancar en modo producción
+CMD ["npm", "start"]
