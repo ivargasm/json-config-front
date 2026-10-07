@@ -106,12 +106,12 @@ export const fetchQueries = async (url: string, schemaId: number) => {
     return res.json();
 };
 
-export const saveQuery = async (url: string, schemaId: number, question: string, sql_query: string) => {
+export const saveQuery = async (url: string, schemaId: number, question: string, sql_query: string, db_engine: string = "aurora") => {
     const res = await fetch(url + "/queries/", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ schema_id: schemaId, question, sql_query }),
+        body: JSON.stringify({ schema_id: schemaId, question, sql_query, db_engine }),
     });
     if (!res.ok) throw new Error('Error al guardar query');
     return res.json();
@@ -127,12 +127,12 @@ export const deleteQuery = async (url: string, queryId: number) => {
 };
 
 
-export const generateSqlQuery = async (url: string, schemaId: number, prompt: string) => {
+export const generateSqlQuery = async (url: string, schemaId: number, prompt: string, dbEngine: string = "aurora") => {
     const res = await fetch(url + "/ai/generate", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ schema_id: schemaId, prompt }),
+        body: JSON.stringify({ schema_id: schemaId, prompt, db_engine: dbEngine }),
     });
     if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
@@ -141,12 +141,12 @@ export const generateSqlQuery = async (url: string, schemaId: number, prompt: st
     return res.json();
 };
 
-export const updateQuery = async (url: string, queryId: number, schemaId: number, question: string, sql_query: string) => {
+export const updateQuery = async (url: string, queryId: number, schemaId: number, question: string, sql_query: string, db_engine: string = "aurora") => {
     const res = await fetch(url + "/queries/" + queryId, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ schema_id: schemaId, question, sql_query }),
+        body: JSON.stringify({ schema_id: schemaId, question, sql_query, db_engine }),
     });
     if (!res.ok) throw new Error('Error al actualizar query');
     return res.json();
@@ -197,12 +197,12 @@ export async function verifyRegister(email: string, code: string, url: string) {
 }
 
 
-export const sendMobileReportChat = async (messages: any[], components: any[], url: string) => {
+export const sendMobileReportChat = async (messages: any[], components: any[], url: string, dbEngine: string = "aurora", schemaId: number | null = null) => {
     const res = await fetch(`${url}/ai/mobile-report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ messages, components })
+        body: JSON.stringify({ messages, components, db_engine: dbEngine, schema_id: schemaId })
     });
     if (!res.ok) {
         const errorData = await res.json().catch(() => null);

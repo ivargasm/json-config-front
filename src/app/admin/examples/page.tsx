@@ -15,6 +15,7 @@ export default function ExamplesPage() {
   
   const [question, setQuestion] = useState("");
   const [sqlQuery, setSqlQuery] = useState("");
+  const [dbEngine, setDbEngine] = useState("aurora");
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -50,12 +51,12 @@ export default function ExamplesPage() {
     if (!schemaId) return;
     try {
       if (editingId) {
-        const updated = await updateQuery(backendUrl, editingId, schemaId, question, sqlQuery);
+        const updated = await updateQuery(backendUrl, editingId, schemaId, question, sqlQuery, dbEngine);
         setQueries(queries.map(q => q.id === editingId ? updated : q));
         toast.success("Ejemplo actualizado");
         setEditingId(null);
       } else {
-        const newQ = await saveQuery(backendUrl, schemaId, question, sqlQuery);
+        const newQ = await saveQuery(backendUrl, schemaId, question, sqlQuery, dbEngine);
         setQueries([...queries, newQ]);
         toast.success("Ejemplo guardado");
       }
@@ -89,6 +90,7 @@ export default function ExamplesPage() {
     setEditingId(q.id);
     setQuestion(q.question);
     setSqlQuery(q.sql_query);
+    setDbEngine(q.db_engine || "aurora");
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -164,23 +166,36 @@ export default function ExamplesPage() {
                 </div>
 
                 <div className="p-6">
-                  <div className="mb-6">
-                    <div className="flex justify-between items-end mb-2">
-                      <label className="block font-semibold text-sm text-slate-900">Pregunta de Usuario (Intención Semántica) <span className="text-rose-500">*</span></label>
-                      <span className="text-[10px] text-slate-400 font-mono uppercase">Vectorizada con text-embedding-3-small</span>
-                    </div>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Code2 size={16} className="text-slate-400" />
+                  <div className="mb-6 flex gap-4">
+                      <div className="w-1/3">
+                        <label className="block font-semibold text-sm text-slate-900 mb-2">Motor BD</label>
+                        <select
+                          value={dbEngine}
+                          onChange={(e) => setDbEngine(e.target.value)}
+                          className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-md h-10 px-3 focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none"
+                        >
+                          <option value="aurora">Aurora (PostgreSQL)</option>
+                          <option value="redshift">AWS Redshift</option>
+                        </select>
                       </div>
-                      <input 
-                        required
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        className="w-full border border-slate-200 pl-10 p-2 text-sm rounded-md h-10 focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none text-slate-900 placeholder-slate-400 transition-shadow" 
-                        placeholder="Ej: ¿Cuáles fueron los 5 clientes con mayor volumen de transacciones este mes?"
-                      />
-                    </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-end mb-2">
+                          <label className="block font-semibold text-sm text-slate-900">Pregunta de Usuario (Intención Semántica) <span className="text-rose-500">*</span></label>
+                          <span className="text-[10px] text-slate-400 font-mono uppercase">Vectorizada con text-embedding-3-small</span>
+                        </div>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Code2 size={16} className="text-slate-400" />
+                          </div>
+                          <input 
+                            required
+                            value={question}
+                            onChange={(e) => setQuestion(e.target.value)}
+                            className="w-full border border-slate-200 pl-10 p-2 text-sm rounded-md h-10 focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none text-slate-900 placeholder-slate-400 transition-shadow" 
+                            placeholder="Ej: ¿Cuáles fueron los 5 clientes con mayor volumen de transacciones este mes?"
+                          />
+                        </div>
+                      </div>
                   </div>
 
                   <div className="mb-6">
@@ -252,9 +267,20 @@ export default function ExamplesPage() {
                           <h4 className="text-base font-bold text-slate-900 mb-1 leading-snug">{q.question}</h4>
                           <div className="flex items-center gap-3 text-xs text-slate-500 font-mono">
                             <span className="flex items-center gap-1"><span className="text-slate-400">ID:</span> fs_q{q.id}9324</span>
-                            <span className="text-slate-300">•</span>
-                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.5 rounded">Precisión: 99.4%</span>
-                          </div>
+                              <span className="text-slate-300">·</span>
+                              <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.5 rounded">Precisión: 99.4%</span>
+                              <span className="text-slate-300">·</span>
+                              {user && q.user_id === Number(user.id) ? (
+                                <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-[10px] font-sans font-semibold border border-purple-200">Mío</span>
+                              ) : (
+                                <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-sans font-semibold border border-slate-200" title={q.user?.email || "Usuario Global"}>De: {q.user?.username || "Global"}</span>
+                              )}
+                              {q.db_engine === 'redshift' ? (
+                                <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded-md text-[10px] font-sans font-medium border border-red-100">📊 Redshift</span>
+                              ) : (
+                                <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md text-[10px] font-sans font-medium border border-blue-100">🐘 Aurora</span>
+                              )}
+                            </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">

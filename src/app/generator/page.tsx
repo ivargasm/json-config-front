@@ -11,6 +11,7 @@ export default function AIGeneratorPage() {
   const [schemaId, setSchemaId] = useState<number | null>(null);
   const [isLoadingContext, setIsLoadingContext] = useState(true);
   
+  const [dbEngine, setDbEngine] = useState("aurora");
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [sqlResult, setSqlResult] = useState<string | null>(null);
@@ -51,7 +52,7 @@ export default function AIGeneratorPage() {
     const start = Date.now();
 
     try {
-      const result = await generateSqlQuery(backendUrl, schemaId, prompt);
+      const result = await generateSqlQuery(backendUrl, schemaId, prompt, dbEngine);
       setSqlResult(result.query);
       setGenerationTime(Date.now() - start);
       toast.success("Query generado exitosamente");
@@ -142,9 +143,18 @@ export default function AIGeneratorPage() {
                   <button className="text-slate-400 hover:text-slate-600 font-medium px-2 py-1">+ Agregar Esquema</button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
-                    <Code2 size={14}/> Dialecto: PostgreSQL
-                  </span>
+                  <div className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-2">
+                    <Code2 size={14}/> 
+                    <label className="font-semibold">Motor BD:</label>
+                    <select 
+                      value={dbEngine}
+                      onChange={(e) => setDbEngine(e.target.value)}
+                      className="bg-transparent outline-none font-bold cursor-pointer"
+                    >
+                      <option value="aurora">Aurora (PostgreSQL)</option>
+                      <option value="redshift">AWS Redshift</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 

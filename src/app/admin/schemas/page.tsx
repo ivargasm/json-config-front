@@ -21,6 +21,7 @@ const columnSchema = z.object({
 const tableSchema = z.object({
   schema: z.string().min(1, "Requerido"),
   table_name: z.string().min(1, "Requerido"),
+    db_engine: z.string(),
   description: z.string().optional(),
   columns: z.array(columnSchema),
 });
@@ -90,8 +91,18 @@ function TableCard({ control, register, index, remove, errors, watch }: any) {
       {isExpanded && (
         <div className="p-0 bg-white">
           <div className="p-5 border-b border-slate-100 bg-slate-50/30 flex gap-4">
-            <div className="flex-1">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Esquema</label>
+              <div className="flex-[0.5]">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Motor BD</label>
+                <select
+                  {...register(`schema_data.${index}.db_engine`)}
+                  className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none"
+                >
+                  <option value="aurora">Aurora (PG)</option>
+                  <option value="redshift">AWS Redshift</option>
+                </select>
+              </div>
+              <div className="flex-[0.75]">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Esquema</label>
               <select
                 {...register(`schema_data.${index}.schema`)}
                 className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none"
@@ -306,6 +317,7 @@ export default function SchemasPage() {
         append({
           schema: mappedSchema,
           table_name: tableName,
+          db_engine: "aurora",
           description: "",
           columns: newColumns
         });
@@ -393,7 +405,7 @@ export default function SchemasPage() {
                <div className="flex gap-2">
                  <button
                    type="button"
-                   onClick={() => append({ schema: "public", table_name: "", description: "", columns: [] })}
+                   onClick={() => append({ schema: "public", table_name: "", db_engine: "aurora", description: "", columns: [] })}
                    className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md font-medium text-sm shadow-sm transition-colors"
                  >
                    <Plus size={16} /> Nueva Tabla
