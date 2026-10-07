@@ -210,3 +210,12 @@ export const sendMobileReportChat = async (messages: any[], components: any[], u
     }
     return res.json();
 };
+
+export const fetchAiConfig = async (url: string) => {
+    const res = await fetch(url + "/ai/config", {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+    });
+    if (!res.ok) return null;
+    return res.json();
+};

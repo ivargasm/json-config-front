@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import ProtectedRoute from "../components/ProtectedRoutes";
 import TopNavbar from "../components/TopNavbar";
 import { toast } from "sonner";
-import { fetchKnowledgeBase, generateSqlQuery } from "../lib/api";
+import { fetchKnowledgeBase, generateSqlQuery, fetchAiConfig } from "../lib/api";
 import { Copy, Sparkles, Database, Check, Play, Zap, Info, Cpu, Code2 } from "lucide-react";
 
 export default function AIGeneratorPage() {
@@ -12,6 +12,9 @@ export default function AIGeneratorPage() {
   const [isLoadingContext, setIsLoadingContext] = useState(true);
   
   const [dbEngine, setDbEngine] = useState("aurora");
+  const [usedModel, setUsedModel] = useState("Detectando modelo...");
+  const [projectId, setProjectId] = useState("");
+  const [subdistId, setSubdistId] = useState("");
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [sqlResult, setSqlResult] = useState<string | null>(null);
@@ -52,8 +55,16 @@ export default function AIGeneratorPage() {
     const start = Date.now();
 
     try {
-      const result = await generateSqlQuery(backendUrl, schemaId, prompt, dbEngine);
+      let finalPrompt = prompt;
+      if (projectId || subdistId) {
+        finalPrompt += "\n\n(Aplica los siguientes IDs a los esquemas: ";
+        if (projectId) finalPrompt += `Project ID = ${projectId}. `;
+        if (subdistId) finalPrompt += `Subdistributor ID = ${subdistId}. `;
+        finalPrompt += ")";
+      }
+      const result = await generateSqlQuery(backendUrl, schemaId, finalPrompt, dbEngine);
       setSqlResult(result.query);
+      if (result.model) setUsedModel(result.model);
       setGenerationTime(Date.now() - start);
       toast.success("Query generado exitosamente");
     } catch (err: any) {
@@ -112,7 +123,7 @@ export default function AIGeneratorPage() {
               <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3 py-1.5 shadow-sm text-xs">
                 <Cpu size={14} className="text-emerald-500" />
                 <span className="text-slate-500">Modelo:</span>
-                <span className="font-semibold text-slate-700">gpt-oss-120b</span>
+                <span className="font-semibold text-slate-700">{usedModel}</span>
               </div>
               <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3 py-1.5 shadow-sm text-xs">
                 <Zap size={14} className="text-indigo-500" />
@@ -135,12 +146,10 @@ export default function AIGeneratorPage() {
               <div className="flex justify-between items-center bg-slate-50 border-y border-slate-200 py-3 px-1 mb-2">
                 <div className="flex items-center gap-3 text-xs">
                   <span className="font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Database size={14}/> Tablas en contexto:
-                  </span>
-                  <span className="bg-white border border-slate-200 text-slate-600 px-2 py-1 rounded flex items-center gap-1.5 shadow-sm"><div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div> public.usuarios</span>
-                  <span className="bg-white border border-slate-200 text-slate-600 px-2 py-1 rounded flex items-center gap-1.5 shadow-sm"><div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div> public.ventas</span>
-                  <span className="bg-white border border-slate-200 text-slate-600 px-2 py-1 rounded flex items-center gap-1.5 shadow-sm"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> analytics.logs</span>
-                  <button className="text-slate-400 hover:text-slate-600 font-medium px-2 py-1">+ Agregar Esquema</button>
+                      <Database size={14}/> Contexto de ID:
+                    </span>
+                    <input type="text" placeholder="Project ID" className="border border-slate-200 text-slate-700 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-indigo-500 w-28" value={projectId} onChange={e => setProjectId(e.target.value)} />
+                    <input type="text" placeholder="Subdistributor ID" className="border border-slate-200 text-slate-700 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-indigo-500 w-32" value={subdistId} onChange={e => setSubdistId(e.target.value)} />
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-2">
@@ -235,22 +244,6 @@ export default function AIGeneratorPage() {
                   </div>
                   
                   {/* IDE Footer Actions */}
-                  <div className="px-6 py-3 bg-[#1a1d27] border-t border-slate-800 flex justify-between items-center">
-                    <div className="flex gap-3">
-                      <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2">
-                        <Play size={14} /> Ejecutar Query en BD
-                      </button>
-                      <button className="text-slate-400 hover:text-slate-200 px-3 py-1.5 text-sm transition-colors flex items-center gap-2">
-                        <Info size={14} /> Explicación del query paso a paso
-                      </button>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 text-[10px] font-mono text-slate-400">
-                      <span className="flex items-center gap-1.5"><Check size={12} className="text-emerald-500"/> Costo estimado: <span className="text-slate-200">0.002x</span></span>
-                      <span className="flex items-center gap-1.5"><Database size={12} className="text-indigo-400"/> Buffer scan: <span className="text-slate-200">Index Scan using idx_invoices_status</span></span>
-                    </div>
-                  </div>
-
                 </div>
               )}
             </div>
