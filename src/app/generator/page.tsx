@@ -5,7 +5,7 @@ import ProtectedRoute from "../components/ProtectedRoutes";
 import TopNavbar from "../components/TopNavbar";
 import { toast } from "sonner";
 import { fetchKnowledgeBase, generateSqlQuery, fetchAiConfig } from "../lib/api";
-import { Copy, Sparkles, Database, Check, Play, Zap, Info, Cpu, Code2 } from "lucide-react";
+import { Copy, Sparkles, Database, Check, Play, Zap, Info, Cpu, Code2, Terminal } from "lucide-react";
 
 export default function AIGeneratorPage() {
   const [schemaId, setSchemaId] = useState<number | null>(null);
@@ -15,9 +15,11 @@ export default function AIGeneratorPage() {
   const [usedModel, setUsedModel] = useState("Detectando modelo...");
   const [projectId, setProjectId] = useState("");
   const [subdistId, setSubdistId] = useState("");
+  const [mode, setMode] = useState<"generate" | "optimize">("generate");
+  const [explainPlan, setExplainPlan] = useState("");
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [sqlResult, setSqlResult] = useState<string | null>(null);
+  const [sqlResult, setSqlResult] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [generationTime, setGenerationTime] = useState<number | null>(null);
 
@@ -62,8 +64,12 @@ export default function AIGeneratorPage() {
         if (subdistId) finalPrompt += `Subdistributor ID = ${subdistId}. `;
         finalPrompt += ")";
       }
-      const result = await generateSqlQuery(backendUrl, schemaId, finalPrompt, dbEngine);
-      setSqlResult(result.query);
+      const result = await generateSqlQuery(backendUrl, schemaId, finalPrompt, dbEngine, mode, explainPlan);
+      if (mode === "optimize") {
+        setSqlResult(result);
+      } else {
+        setSqlResult(result.query);
+      }
       if (result.model) setUsedModel(result.model);
       setGenerationTime(Date.now() - start);
       toast.success("Query generado exitosamente");
@@ -82,7 +88,8 @@ export default function AIGeneratorPage() {
 
   const copyToClipboard = () => {
     if (sqlResult) {
-      navigator.clipboard.writeText(sqlResult);
+      const textToCopy = typeof sqlResult === "string" ? sqlResult : (sqlResult.optimized_sql || "");
+      navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       toast.success("Copiado al portapapeles");
       setTimeout(() => setCopied(false), 2000);
@@ -114,6 +121,10 @@ export default function AIGeneratorPage() {
                 <span className="text-[10px] font-mono text-slate-400 flex items-center">• PostgreSQL v16.3-pgvector</span>
               </div>
               <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">Asistente SQL</h2>
+                <div className="flex bg-slate-200/60 p-1 rounded-lg w-max mt-4 mb-2">
+                  <button onClick={() => { setMode("generate"); setSqlResult(null); }} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${mode === "generate" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>🪄 Generador</button>
+                  <button onClick={() => { setMode("optimize"); setSqlResult(null); }} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${mode === "optimize" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>⚡ Optimizador</button>
+                </div>
               <p className="text-slate-500 text-sm max-w-2xl">
                 Transforma intenciones complejas en sintaxis SQL optimizada con introspección activa de esquemas, particiones e índices.
               </p>
@@ -169,15 +180,52 @@ export default function AIGeneratorPage() {
 
               {/* Chat Input Area (The White Card) */}
               <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden relative">
-                <textarea 
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="w-full bg-transparent p-6 focus:outline-none resize-none h-40 text-slate-800 text-base placeholder-slate-300 leading-relaxed"
-                  placeholder="Muestra los ingresos recurrentes mensuales del último trimestre comparados con el año anterior, agrupados por mes de facturación..."
-                  disabled={isGenerating}
-                  spellCheck="false"
-                />
+                {mode === "generate" ? (
+                  <textarea 
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="w-full bg-transparent p-6 focus:outline-none resize-none h-40 text-slate-800 text-base placeholder-slate-300 leading-relaxed"
+                    placeholder="Muestra los ingresos recurrentes mensuales del último trimestre comparados con el año anterior..."
+                    disabled={isGenerating}
+                    spellCheck="false"
+                  />
+                ) : (
+                  <div className="flex flex-col md:flex-row h-80 gap-4 p-4 bg-slate-50/50">
+                    {/* Left: Slow Query */}
+                    <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
+                      <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex items-center gap-2 text-xs font-semibold text-slate-600">
+                        <Code2 size={14} className="text-indigo-500"/> Query Lento Original
+                      </div>
+                      <textarea 
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        className="flex-1 w-full p-4 focus:outline-none resize-none text-slate-700 text-sm font-mono placeholder-slate-300"
+                        placeholder="-- Pega tu código SQL aquí..."
+                        disabled={isGenerating}
+                        spellCheck="false"
+                      />
+                    </div>
+
+                    {/* Right: EXPLAIN Plan */}
+                    <div className="flex-1 flex flex-col bg-[#0f111a] border border-slate-800 rounded-lg shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500/50 transition-all">
+                      <div className="bg-[#1a1d27] px-4 py-2 border-b border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
+                          <Terminal size={14} className="text-emerald-500"/> EXPLAIN Plan (Output)
+                        </div>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold bg-slate-800/80 px-2 py-0.5 rounded">Opcional</span>
+                      </div>
+                      <textarea 
+                        value={explainPlan}
+                        onChange={(e) => setExplainPlan(e.target.value)}
+                        className="flex-1 w-full p-4 bg-transparent focus:outline-none resize-none text-emerald-400/90 text-xs font-mono placeholder-slate-600 leading-relaxed"
+                        placeholder="->  Seq Scan on project_9387_f_module_report (cost=0.00..12.50 rows=100 width=45)..."
+                        disabled={isGenerating}
+                        spellCheck="false"
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="flex justify-between items-end p-4 bg-white border-t border-slate-50">
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Sugerencias:</span>
@@ -238,9 +286,32 @@ export default function AIGeneratorPage() {
                   
                   {/* IDE Body */}
                   <div className="p-6 overflow-x-auto">
-                    <pre className="font-mono text-sm leading-relaxed text-emerald-400">
-                      <code>{sqlResult}</code>
-                    </pre>
+                    {mode === "generate" ? (
+                      <pre className="font-mono text-sm leading-relaxed text-emerald-400">
+                        <code>{typeof sqlResult === "string" ? sqlResult : ""}</code>
+                      </pre>
+                    ) : (
+                      <div className="space-y-6 text-sm">
+                        <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-lg">
+                          <h3 className="text-slate-300 font-semibold mb-2 flex items-center gap-2">🩺 Diagnóstico</h3>
+                          <p className="text-slate-400 leading-relaxed">{sqlResult?.diagnosis}</p>
+                        </div>
+                        {sqlResult?.indexes_sql && (
+                          <div>
+                            <h3 className="text-slate-300 font-semibold mb-2 flex items-center gap-2">⚡ Índices Recomendados</h3>
+                            <pre className="bg-slate-900 p-4 rounded-lg font-mono text-emerald-400 overflow-x-auto border border-slate-800">
+                              <code>{sqlResult.indexes_sql}</code>
+                            </pre>
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="text-slate-300 font-semibold mb-2 flex items-center gap-2">🛠️ Query Refactorizado</h3>
+                          <pre className="bg-slate-900 p-4 rounded-lg font-mono text-indigo-300 overflow-x-auto border border-slate-800">
+                            <code>{sqlResult?.optimized_sql}</code>
+                          </pre>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   {/* IDE Footer Actions */}

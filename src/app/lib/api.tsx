@@ -127,12 +127,12 @@ export const deleteQuery = async (url: string, queryId: number) => {
 };
 
 
-export const generateSqlQuery = async (url: string, schemaId: number, prompt: string, dbEngine: string = "aurora") => {
+export const generateSqlQuery = async (url: string, schemaId: number, prompt: string, dbEngine: string = "aurora", mode: string = "generate", explainPlan: string = "") => {
     const res = await fetch(url + "/ai/generate", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ schema_id: schemaId, prompt, db_engine: dbEngine }),
+        body: JSON.stringify({ schema_id: schemaId, prompt, db_engine: dbEngine, mode, explain_plan: explainPlan || null }),
     });
     if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
