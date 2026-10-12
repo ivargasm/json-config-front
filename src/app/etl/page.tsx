@@ -123,6 +123,7 @@ export default function EtlGeneratorPage() {
     {role: "assistant", text: "¡Hola! He generado el script. ¿Necesitas que agregue lógica extra de Pandas?"}
   ]);
   const [isRefining, setIsRefining] = useState(false);
+  const [copilotModel, setCopilotModel] = useState<string>("");
 
   // Regex Builder States (per active KPI)
   const [rxFormat, setRxFormat] = useState('yyyymmdd');
@@ -386,6 +387,7 @@ export default function EtlGeneratorPage() {
     try {
       const result = await refineEtlScript(backendUrl, generatedScript, userMsg);
       setGeneratedScript(result.code);
+      if (result.model) setCopilotModel(result.model);
       setChatHistory(prev => [...prev, { role: "assistant", text: result.explanation }]);
       toast.success("Script actualizado");
     } catch (error: any) {
@@ -818,7 +820,17 @@ export default function EtlGeneratorPage() {
                 <div className="w-full md:w-96 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
                 <div className="bg-emerald-50 px-4 py-4 border-b border-emerald-100 flex items-center gap-3">
                   <Bot className="text-emerald-600" size={20} />
-                  <div><h3 className="text-emerald-900 font-semibold text-sm">Copiloto AI</h3><p className="text-emerald-600 text-xs">Pide ajustes al código base</p></div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-emerald-900 font-semibold text-sm">Copiloto AI</h3>
+                      {copilotModel && (
+                        <span className="bg-emerald-200/70 text-emerald-800 text-[10px] font-mono font-medium px-1.5 py-0.5 rounded">
+                          {copilotModel}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-emerald-600 text-xs">Pide ajustes al código base</p>
+                  </div>
                 </div>
                 
                 <div className="flex-1 p-4 overflow-auto bg-slate-50 flex flex-col gap-4">
