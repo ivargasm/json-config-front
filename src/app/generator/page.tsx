@@ -20,6 +20,8 @@ export default function AIGeneratorPage() {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [sqlResult, setSqlResult] = useState<any>(null);
+  const [validationInfo, setValidationInfo] = useState<{ is_valid: boolean; warning: string | null } | null>(null);
+  const [pruningInfo, setPruningInfo] = useState<{ total: number; selected: number; pruned: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [generationTime, setGenerationTime] = useState<number | null>(null);
 
@@ -54,6 +56,8 @@ export default function AIGeneratorPage() {
 
     setIsGenerating(true);
     setSqlResult(null);
+    setValidationInfo(null);
+    setPruningInfo(null);
     setCopied(false);
     const start = Date.now();
 
@@ -71,6 +75,8 @@ export default function AIGeneratorPage() {
       } else {
         setSqlResult(result.query);
       }
+      if (result.validation) setValidationInfo(result.validation);
+      if (result.pruning) setPruningInfo(result.pruning);
       if (result.model) setUsedModel(result.model);
       setGenerationTime(Date.now() - start);
       toast.success("Query generado exitosamente");
@@ -270,12 +276,27 @@ export default function AIGeneratorPage() {
                       <div className="flex items-center gap-2 text-xs font-mono text-slate-300 bg-[#0f111a] px-3 py-1 rounded-t-md mt-2 mb-[-10px] border-x border-t border-slate-800 pb-3">
                         <Code2 size={14} className="text-slate-500"/>
                         query_generada.sql
-                        <span className="bg-indigo-900/50 text-indigo-300 px-1.5 py-0.5 rounded text-[10px] ml-2">PostgreSQL 16 CTE</span>
+                        <span className="bg-indigo-900/50 text-indigo-300 px-1.5 py-0.5 rounded text-[10px] ml-2">
+                          {dbEngine === "redshift" ? "AWS Redshift MPP" : "Aurora PostgreSQL 16"}
+                        </span>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-4">
-                      <span className="text-[10px] text-emerald-400 flex items-center gap-1.5 font-medium"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> Sintaxis Verificada</span>
+                      {pruningInfo && (
+                        <span className="text-[10px] text-indigo-300 bg-indigo-950/60 border border-indigo-800/60 px-2 py-0.5 rounded font-mono">
+                          Contexto: {pruningInfo.selected}/{pruningInfo.total} tablas
+                        </span>
+                      )}
+                      {validationInfo?.is_valid === false ? (
+                        <span className="text-[10px] text-amber-400 flex items-center gap-1.5 font-medium">
+                          <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></div> Revisar Sintaxis (sqlglot)
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-emerald-400 flex items-center gap-1.5 font-medium">
+                          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> Sintaxis Verificada (sqlglot)
+                        </span>
+                      )}
                       <button 
                         onClick={copyToClipboard}
                         className="flex items-center text-xs font-medium bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-md transition-colors text-slate-300 border border-white/10"
@@ -287,6 +308,11 @@ export default function AIGeneratorPage() {
                   
                   {/* IDE Body */}
                   <div className="p-6 overflow-x-auto">
+                    {validationInfo?.warning && (
+                      <div className="mb-4 p-3 bg-amber-950/40 border border-amber-800/60 rounded-lg text-xs text-amber-300 font-mono">
+                        <strong>Aviso sqlglot:</strong> {validationInfo.warning}
+                      </div>
+                    )}
                     {mode === "generate" ? (
                       <pre className="font-mono text-sm leading-relaxed text-emerald-400">
                         <code>{typeof sqlResult === "string" ? sqlResult : ""}</code>
@@ -299,7 +325,11 @@ export default function AIGeneratorPage() {
                         </div>
                         {sqlResult?.indexes_sql && (
                           <div>
-                            <h3 className="text-slate-300 font-semibold mb-2 flex items-center gap-2">⚡ Índices Recomendados</h3>
+                            <h3 className="text-slate-300 font-semibold mb-2 flex items-center gap-2">
+                              {dbEngine === "redshift"
+                                ? "⚡ Optimización Física (DISTKEY / SORTKEY / VACUUM)"
+                                : "⚡ Índices Recomendados (B-Tree)"}
+                            </h3>
                             <pre className="bg-slate-900 p-4 rounded-lg font-mono text-emerald-400 overflow-x-auto border border-slate-800">
                               <code>{sqlResult.indexes_sql}</code>
                             </pre>
