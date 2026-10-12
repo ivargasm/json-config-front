@@ -20,7 +20,8 @@ export default function TopNavbar() {
     { name: "Entrenamiento IA", href: "/admin/examples" },
     { name: "Asistente SQL", href: "/generator" },
     { name: "Mobile Reports", href: "/mobile-report" },
-    { name: "Preset Reports", href: "/preset-report" }
+    { name: "Preset Reports", href: "/preset-report" },
+    { name: "Asistente ETL", href: "/etl" }
   ];
 
   return (

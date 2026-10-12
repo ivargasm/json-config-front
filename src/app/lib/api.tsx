@@ -219,3 +219,48 @@ export const fetchAiConfig = async (url: string) => {
     if (!res.ok) return null;
     return res.json();
 };
+
+export const generateEtlScript = async (url: string, config: any) => {
+    const res = await fetch(url + "/etl/generate", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ config }),
+    });
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Error al generar el script ETL');
+    }
+    return res.json();
+};
+
+export const refineEtlScript = async (url: string, current_script: string, prompt: string) => {
+    const res = await fetch(url + "/etl/refine", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ current_script, prompt }),
+    });
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Error al refinar el script ETL');
+    }
+    return res.json();
+};
+
+export const previewEtlFile = async (url: string, file: File, separator: string = ",") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("separator", separator);
+
+    const res = await fetch(url + "/etl/preview", {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+    });
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Error al procesar el archivo');
+    }
+    return res.json();
+};
