@@ -29,7 +29,7 @@ export default function TopNavbar() {
       <div className="flex items-center gap-8">
         <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2 py-4">
           <Database size={22} className="text-indigo-600"/>
-          NexusAI Data Engine
+          Storecheck NexusAI
         </h1>
         <nav className="flex gap-6 text-sm font-medium h-full">
           {tabs.map(tab => {

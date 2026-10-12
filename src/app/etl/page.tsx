@@ -295,6 +295,10 @@ export default function EtlGeneratorPage() {
   };
 
   useEffect(() => {
+    document.title = "Asistente ETL | Storecheck NexusAI";
+  }, []);
+
+  useEffect(() => {
     const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const p = DATE_FORMAT_PATTERNS[rxFormat] || '\\d{8}';
     let before = '';

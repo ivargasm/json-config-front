@@ -217,6 +217,7 @@ export default function SchemasPage() {
   });
 
   useEffect(() => {
+    document.title = "Cerebro Global | Storecheck NexusAI";
     const loadContext = async () => {
       try {
         const schemas = await fetchKnowledgeBase(backendUrl);

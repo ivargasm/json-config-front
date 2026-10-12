@@ -26,6 +26,7 @@ export default function AIGeneratorPage() {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
   useEffect(() => {
+    document.title = "Asistente SQL | Storecheck NexusAI";
     const loadContext = async () => {
       try {
         const schemas = await fetchKnowledgeBase(backendUrl);

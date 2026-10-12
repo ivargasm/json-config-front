@@ -42,6 +42,7 @@ export default function LoginPage() {
     });
 
     useEffect(() => {
+        document.title = "Iniciar Sesión | Storecheck NexusAI";
         const validateUser = async () => {
             await userValid();
         };
