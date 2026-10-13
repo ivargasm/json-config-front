@@ -83,6 +83,27 @@ const DATA_TYPES = [
 ];
 
 /**
+ * Infiere el tipo de tabla por convención de prefijo (d_*, f_*, b_*) cuando no viene explícito.
+ */
+function inferTableType(tableName?: string, explicitType?: string): string {
+  if (explicitType && explicitType.trim()) {
+    return explicitType.trim().toLowerCase();
+  }
+  const lower = (tableName || "").trim().toLowerCase();
+  if (lower.startsWith("d_") || lower.startsWith("dim_")) return "dimension";
+  if (lower.startsWith("f_") || lower.startsWith("fact_")) return "fact";
+  if (
+    lower.startsWith("b_") ||
+    lower.startsWith("br_") ||
+    lower.startsWith("rel_") ||
+    lower.startsWith("bridge_")
+  ) {
+    return "bridge";
+  }
+  return "";
+}
+
+/**
  * Normaliza las tablas desde el JSON de la BD (o archivo importado) hacia el estado del formulario.
  */
 function normalizeTablesForForm(rawTables: any[]): any[] {
@@ -139,14 +160,17 @@ function normalizeTablesForForm(rawTables: any[]): any[] {
         : c.sample_values_str || "",
     }));
 
+    const tableName = t.table_name || "";
+    const inferredType = inferTableType(tableName, t.table_type);
+
     return {
       ...t,
       schema: (t.schema || "public")
         .replace("project_{id}", "project{id}")
         .replace("subdistributor_{id}", "subdistributor{id}"),
-      table_name: t.table_name || "",
+      table_name: tableName,
       db_engine: t.db_engine || "aurora",
-      table_type: t.table_type || "",
+      table_type: inferredType,
       description: t.description || "",
       grain: t.grain || "",
       primary_key_str: pkStr,
@@ -241,8 +265,9 @@ function serializeTablesForSave(formTables: any[]): any[] {
       columns: colsClean,
     };
 
-    if (t.table_type && t.table_type.trim()) {
-      tableObj.table_type = t.table_type.trim();
+    const resolvedTableType = inferTableType(t.table_name, t.table_type);
+    if (resolvedTableType) {
+      tableObj.table_type = resolvedTableType;
     }
     if (t.grain && t.grain.trim()) {
       tableObj.grain = t.grain.trim();
@@ -293,7 +318,7 @@ function TableCard({ control, register, index, remove, watch, onDirty }: any) {
   const schemaName = watch(`schema_data.${index}.schema`) || "public";
   const tableName = watch(`schema_data.${index}.table_name`) || "nueva_tabla";
   const dbEngine = watch(`schema_data.${index}.db_engine`) || "aurora";
-  const tableType = watch(`schema_data.${index}.table_type`) || "";
+  const tableType = inferTableType(tableName, watch(`schema_data.${index}.table_type`));
   const defaultFilters = watch(`schema_data.${index}.default_filters`) || "";
   const numColumns = colFields.length;
   const numFks = fkFields.length;
@@ -375,62 +400,98 @@ function TableCard({ control, register, index, remove, watch, onDirty }: any) {
 
       {isExpanded && (
         <div className="p-0 bg-white">
-          {/* Fila 1: Datos principales de la tabla */}
-          <div className="p-5 border-b border-slate-100 bg-slate-50/30 grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Motor BD</label>
-              <select
-                {...register(`schema_data.${index}.db_engine`)}
-                className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none"
-              >
-                <option value="aurora">Aurora (PG)</option>
-                <option value="redshift">AWS Redshift</option>
-              </select>
+          {/* Fila 1 y 2: Datos principales y Metadatos clave (Grain, PK, Filtro) siempre visibles */}
+          <div className="p-5 border-b border-slate-100 bg-slate-50/30 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Motor BD</label>
+                <select
+                  {...register(`schema_data.${index}.db_engine`)}
+                  className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none"
+                >
+                  <option value="aurora">Aurora (PG)</option>
+                  <option value="redshift">AWS Redshift</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Tipo Tabla</label>
+                <select
+                  {...register(`schema_data.${index}.table_type`)}
+                  className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none"
+                >
+                  <option value="">Estándar</option>
+                  <option value="fact">Fact (Hechos)</option>
+                  <option value="dimension">Dimension</option>
+                  <option value="bridge">Bridge (Puente)</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Esquema</label>
+                <select
+                  {...register(`schema_data.${index}.schema`)}
+                  className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none"
+                >
+                  <option value="stoiii">stoiii</option>
+                  <option value="stoiii_config">stoiii_config</option>
+                  <option value="project{id}">project&#123;id&#125;</option>
+                  <option value="subdistributor{id}">subdistributor&#123;id&#125;</option>
+                  <option value="public">public</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Nombre Tabla</label>
+                <input
+                  {...register(`schema_data.${index}.table_name`)}
+                  className="w-full bg-white border border-slate-200 text-slate-900 font-mono text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 outline-none"
+                  placeholder="ej. f_visit"
+                />
+              </div>
+              <div className="md:col-span-4">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Descripción (Semántica)</label>
+                <input
+                  {...register(`schema_data.${index}.description`)}
+                  className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 outline-none"
+                  placeholder="Propósito de la tabla..."
+                />
+              </div>
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Tipo Tabla</label>
-              <select
-                {...register(`schema_data.${index}.table_type`)}
-                className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none"
-              >
-                <option value="">Estándar</option>
-                <option value="fact">Fact (Hechos)</option>
-                <option value="dimension">Dimension</option>
-                <option value="bridge">Bridge (Puente)</option>
-              </select>
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Esquema</label>
-              <select
-                {...register(`schema_data.${index}.schema`)}
-                className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 focus:border-indigo-600 outline-none"
-              >
-                <option value="stoiii">stoiii</option>
-                <option value="stoiii_config">stoiii_config</option>
-                <option value="project{id}">project&#123;id&#125;</option>
-                <option value="subdistributor{id}">subdistributor&#123;id&#125;</option>
-                <option value="public">public</option>
-              </select>
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Nombre Tabla</label>
-              <input
-                {...register(`schema_data.${index}.table_name`)}
-                className="w-full bg-white border border-slate-200 text-slate-900 font-mono text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 outline-none"
-                placeholder="ej. f_visit"
-              />
-            </div>
-            <div className="md:col-span-4">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Descripción (Semántica)</label>
-              <input
-                {...register(`schema_data.${index}.description`)}
-                className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-md h-9 px-3 focus:ring-1 focus:ring-indigo-600 outline-none"
-                placeholder="Propósito de la tabla..."
-              />
+
+            {/* Segunda fila siempre visible: Grain, Primary Key y Default Filter */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-2 border-t border-slate-200/60">
+              <div className="md:col-span-6">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  Granularidad (Grain)
+                </label>
+                <input
+                  {...register(`schema_data.${index}.grain`)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-md h-8 px-3 focus:ring-1 focus:ring-indigo-600 outline-none"
+                  placeholder="ej. 1 fila por producto / visita"
+                />
+              </div>
+              <div className="md:col-span-3">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Key size={12} className="text-amber-500" /> Primary Key (separadas por coma)
+                </label>
+                <input
+                  {...register(`schema_data.${index}.primary_key_str`)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 font-mono text-xs rounded-md h-8 px-3 focus:ring-1 focus:ring-indigo-600 outline-none"
+                  placeholder="ej. id"
+                />
+              </div>
+              <div className="md:col-span-3">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Filter size={12} className="text-rose-500" /> Filtro por Defecto Obligatorio
+                </label>
+                <input
+                  {...register(`schema_data.${index}.default_filters`)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 font-mono text-xs rounded-md h-8 px-3 focus:ring-1 focus:ring-indigo-600 outline-none"
+                  placeholder="ej. is_deleted = false"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Toggle de Metadatos Enriquecidos DBA (Grain, PK, FKs, Filtros, Índices / Distribución) */}
+          {/* Toggle de Relaciones (Foreign Keys) e Índices / Distribución */}
           <div className="px-5 py-2.5 bg-indigo-50/40 border-b border-slate-100 flex justify-between items-center">
             <button
               type="button"
@@ -438,7 +499,9 @@ function TableCard({ control, register, index, remove, watch, onDirty }: any) {
               className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 flex items-center gap-2"
             >
               <Layers size={14} />
-              {showAdvanced ? "Ocultar Metadatos DBA (Relaciones, Filtros, Índices)" : "Configurar Metadatos DBA (Grain, PK, Foreign Keys, Filtros e Índices)"}
+              {showAdvanced
+                ? "Ocultar Relaciones (Foreign Keys) e Índices / Distribución"
+                : "Configurar Relaciones (Foreign Keys) e Índices / Distribución Física"}
               {showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             <div className="text-[11px] text-slate-500 font-mono">
@@ -448,40 +511,6 @@ function TableCard({ control, register, index, remove, watch, onDirty }: any) {
 
           {showAdvanced && (
             <div className="p-5 bg-slate-50/60 border-b border-slate-200 space-y-5">
-              {/* Grain, PK y Default Filter */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
-                    Granularidad (Grain)
-                  </label>
-                  <input
-                    {...register(`schema_data.${index}.grain`)}
-                    className="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-md h-8 px-3 focus:ring-1 focus:ring-indigo-600 outline-none"
-                    placeholder="ej. una fila por visita"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1 flex items-center gap-1">
-                    <Key size={12} className="text-amber-500" /> Primary Key (separadas por coma)
-                  </label>
-                  <input
-                    {...register(`schema_data.${index}.primary_key_str`)}
-                    className="w-full bg-white border border-slate-200 text-slate-800 font-mono text-xs rounded-md h-8 px-3 focus:ring-1 focus:ring-indigo-600 outline-none"
-                    placeholder="ej. id"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1 flex items-center gap-1">
-                    <Filter size={12} className="text-rose-500" /> Filtro por Defecto Obligatorio
-                  </label>
-                  <input
-                    {...register(`schema_data.${index}.default_filters`)}
-                    className="w-full bg-white border border-slate-200 text-slate-800 font-mono text-xs rounded-md h-8 px-3 focus:ring-1 focus:ring-indigo-600 outline-none"
-                    placeholder="ej. is_deleted = false"
-                  />
-                </div>
-              </div>
-
               {/* Foreign Keys */}
               <div className="bg-white p-4 rounded-lg border border-slate-200">
                 <div className="flex justify-between items-center mb-3">
