@@ -4,13 +4,15 @@ import { useState } from "react";
 import ProtectedRoute from "../components/ProtectedRoutes";
 import TopNavbar from "../components/TopNavbar";
 import { useMobileReportStore } from "../store/mobileReportStore";
-import { Code2, Settings2, Plus, LayoutList, Download, Copy, Play, Check, X, Upload, FileCode, Sparkles, RotateCcw, AlertTriangle } from "lucide-react";
+import { Code2, Settings2, Plus, LayoutList, Download, Copy, Play, Check, X, Upload, FileCode, Sparkles, RotateCcw, AlertTriangle, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import GlobalFiltersForm from "./components/GlobalFiltersForm";
 import ComponentConfigurator from "./components/ComponentConfigurator";
 import AddComponentModal from "./components/AddComponentModal";
+import MobileComponentsDocsModal from "./components/MobileComponentsDocsModal";
 import LivePreview from "./components/LivePreview";
 import AIChatPanel from "./components/AIChatPanel";
+import { ComponentType } from "../types/mobileReport";
 
 export default function MobileReportBuilder() {
   const { filters, components, removeComponent, exportJSON, resetReport } = useMobileReportStore();
@@ -19,6 +21,8 @@ export default function MobileReportBuilder() {
   const [jsonDrawerOpen, setJsonDrawerOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
+  const [docsModalOpen, setDocsModalOpen] = useState(false);
+  const [docsTargetType, setDocsTargetType] = useState<ComponentType | undefined>(undefined);
   
   const [copiedFormatted, setCopiedFormatted] = useState(false);
   const [copiedMinified, setCopiedMinified] = useState(false);
@@ -94,6 +98,17 @@ export default function MobileReportBuilder() {
           
           
           <div className="flex gap-3">
+            <button 
+              type="button"
+              onClick={() => {
+                setDocsTargetType(undefined);
+                setDocsModalOpen(true);
+              }}
+              className="flex items-center gap-2 border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 px-3.5 py-1.5 rounded-md font-medium text-sm shadow-xs transition-colors"
+              title="Ver guía completa de componentes y requerimientos SQL"
+            >
+              <BookOpen size={15} className="text-indigo-600" /> Guía de Componentes
+            </button>
             <button 
               type="button"
               onClick={() => setConfirmResetOpen(true)}
@@ -210,7 +225,13 @@ export default function MobileReportBuilder() {
                     </button>
                   </div>
                   <div className="p-6">
-                    <ComponentConfigurator componentId={selectedItem} />
+                    <ComponentConfigurator 
+                      componentId={selectedItem} 
+                      onOpenDocs={(type) => {
+                        setDocsTargetType(type);
+                        setDocsModalOpen(true);
+                      }}
+                    />
                   </div>
                 </div>
               )}
@@ -223,7 +244,15 @@ export default function MobileReportBuilder() {
       </div>
 
       {/* Modals */}
-      {addModalOpen && <AddComponentModal onClose={() => setAddModalOpen(false)} />}
+      {addModalOpen && (
+        <AddComponentModal 
+          onClose={() => setAddModalOpen(false)} 
+          onOpenDocs={(type) => {
+            setDocsTargetType(type);
+            setDocsModalOpen(true);
+          }}
+        />
+      )}
 
       {/* JSON Drawer Overlay */}
       {jsonDrawerOpen && (
@@ -319,6 +348,13 @@ export default function MobileReportBuilder() {
           </div>
         </div>
       )}
+
+      {/* Modal de Documentación y Especificación de Componentes */}
+      <MobileComponentsDocsModal
+        isOpen={docsModalOpen}
+        onClose={() => setDocsModalOpen(false)}
+        initialComponentType={docsTargetType}
+      />
 
     </ProtectedRoute>
   );

@@ -2,12 +2,17 @@
 
 import React, { useState } from "react";
 import { useMobileReportStore } from "../../store/mobileReportStore";
-import { Database, Code2, Settings, Plus, Trash2, Zap, Eye } from "lucide-react";
-import { TableColumn, ResumeRow } from "../../types/mobileReport";
+import { Database, Code2, Settings, Plus, Trash2, Zap, Eye, BookOpen } from "lucide-react";
+import { TableColumn, ResumeRow, ComponentType } from "../../types/mobileReport";
 import { toast } from "sonner";
 import { parseColumns } from "../../lib/api";
 
-export default function ComponentConfigurator({ componentId }: { componentId: string }) {
+interface ComponentConfiguratorProps {
+  componentId: string;
+  onOpenDocs?: (type: ComponentType) => void;
+}
+
+export default function ComponentConfigurator({ componentId, onOpenDocs }: ComponentConfiguratorProps) {
   const { components, updateComponent } = useMobileReportStore();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   
@@ -630,11 +635,23 @@ export default function ComponentConfigurator({ componentId }: { componentId: st
             <div>
               <div className="flex justify-between items-end mb-1">
                 <label className="block text-xs font-semibold text-slate-600 flex items-center gap-1"><Code2 size={12}/> Query Principal (Datasource)</label>
-                {(component.type === 'table' || component.type === 'resume') && (
-                  <button onClick={handleAnalyzeSql} disabled={isAnalyzing} className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-100 disabled:opacity-50 transition-colors">
-                    <Zap size={10} /> {isAnalyzing ? 'Analizando...' : 'Extraer Columnas'}
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {onOpenDocs && (
+                    <button 
+                      type="button"
+                      onClick={() => onOpenDocs(component.type)} 
+                      className="flex items-center gap-1 text-[10px] font-semibold text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded transition-colors"
+                      title="Ver qué columnas y formato SQL espera este componente"
+                    >
+                      <BookOpen size={11} /> Columnas esperadas
+                    </button>
+                  )}
+                  {(component.type === 'table' || component.type === 'resume') && (
+                    <button onClick={handleAnalyzeSql} disabled={isAnalyzing} className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-100 disabled:opacity-50 transition-colors">
+                      <Zap size={10} /> {isAnalyzing ? 'Analizando...' : 'Extraer Columnas'}
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="rounded-md border border-slate-200 overflow-hidden bg-slate-900 shadow-inner">
                 <textarea value={component.datasource || ""} onChange={(e) => updateComponent(component.id, { datasource: e.target.value })} className="w-full bg-transparent text-emerald-400 p-4 text-sm font-mono h-32 focus:outline-none resize-y" spellCheck="false" />
