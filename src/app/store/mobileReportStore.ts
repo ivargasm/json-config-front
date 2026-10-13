@@ -8,15 +8,23 @@ export interface ChatMessage {
   content: string;
 }
 
+export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
+  { 
+    role: 'assistant', 
+    content: '¡Hola! Soy tu Asistente IA Arquitecto de Reportes.\n\n**¿Qué SÍ puedo hacer?**\n✅ Crear o eliminar componentes visuales.\n✅ Configurar colores, semáforos y reglas de ocultamiento (`show_when`).\n✅ Conectar interacciones (ej. "Al dar clic aquí, muestra este otro componente").\n\n**¿Qué NO puedo hacer?**\n❌ No genero código SQL. Si me pides un componente nuevo, yo te armaré el "cascarón" perfecto y tú deberás usar el Asistente SQL (en la pestaña Estructura) para inyectarle los datos.\n\n¿Qué quieres que construyamos hoy?' 
+  }
+];
+
 interface MobileReportState {
     // Filters State
     filters: string[];
     generic_filters: GenericFilter[];
     filters_properties: Record<string, FilterProperties>;
     
-        // Chat State
+    // Chat State
     chatMessages: ChatMessage[];
     setChatMessages: (updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => void;
+    resetChat: () => void;
     
     // Components State
     components: ReportComponent[];
@@ -40,6 +48,7 @@ interface MobileReportState {
     // Global Actions
     loadFromJSON: (data: any) => void;
     exportJSON: () => any;
+    resetReport: () => void;
 }
 
 export const useMobileReportStore = create<MobileReportState>()(
@@ -50,15 +59,20 @@ export const useMobileReportStore = create<MobileReportState>()(
     filters_properties: {},
     components: [],
     // Chat State
-    chatMessages: [
-      { 
-        role: 'assistant', 
-        content: '¡Hola! Soy tu Asistente IA Arquitecto de Reportes.\n\n**¿Qué SÍ puedo hacer?**\n✅ Crear o eliminar componentes visuales.\n✅ Configurar colores, semáforos y reglas de ocultamiento (`show_when`).\n✅ Conectar interacciones (ej. "Al dar clic aquí, muestra este otro componente").\n\n**¿Qué NO puedo hacer?**\n❌ No genero código SQL. Si me pides un componente nuevo, yo te armaré el "cascarón" perfecto y tú deberás usar el Asistente SQL (en la pestaña Estructura) para inyectarle los datos.\n\n¿Qué quieres que construyamos hoy?' 
-      }
-    ],
+    chatMessages: INITIAL_CHAT_MESSAGES,
     setChatMessages: (updater) => set((state) => ({
       chatMessages: typeof updater === 'function' ? updater(state.chatMessages) : updater
     })),
+    resetChat: () => set({
+      chatMessages: INITIAL_CHAT_MESSAGES
+    }),
+    resetReport: () => set({
+      filters: [],
+      generic_filters: [],
+      filters_properties: {},
+      components: [],
+      chatMessages: INITIAL_CHAT_MESSAGES
+    }),
 
     // Components State
 

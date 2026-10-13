@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Sparkles, Bot, User, Loader2, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 import { sendMobileReportChat } from '../../lib/api';
 import { useMobileReportStore } from '../../store/mobileReportStore';
 
@@ -11,8 +12,9 @@ interface Message {
 }
 
 export default function AIChatPanel() {
-    const chatMessages = useMobileReportStore(state => state.chatMessages);
+  const chatMessages = useMobileReportStore(state => state.chatMessages);
   const setChatMessages = useMobileReportStore(state => state.setChatMessages);
+  const resetChat = useMobileReportStore(state => state.resetChat);
   const messages = chatMessages;
   const setMessages = setChatMessages;
   const [input, setInput] = useState('');
@@ -26,6 +28,11 @@ export default function AIChatPanel() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const handleResetChat = () => {
+    resetChat();
+    toast.success("Historial del chat reiniciado");
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -55,13 +62,33 @@ export default function AIChatPanel() {
 
     } catch (e: any) {
       console.error(e);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Hubo un error de conexin.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Hubo un error de conexión.' }]);
       setIsTyping(false);
     }
   };
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden bg-slate-50 relative">
+      {/* Cabecera del Chat con Reset de Contexto */}
+      <div className="px-3.5 py-2 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-xs">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          <Sparkles size={14} className="text-indigo-600" />
+          <span>Memoria Asistente</span>
+          {messages.length > 1 && (
+            <span className="text-[10px] text-slate-400 font-mono">({messages.length - 1} mensajes)</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={handleResetChat}
+          className="text-xs text-slate-400 hover:text-rose-600 flex items-center gap-1 px-2 py-0.5 rounded hover:bg-slate-50 transition-colors"
+          title="Borrar memoria del chat para iniciar una conversación limpia sin perder componentes"
+        >
+          <RotateCcw size={12} />
+          <span>Limpiar chat</span>
+        </button>
+      </div>
+
       {/* Mensajes */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
         {messages.map((msg, idx) => (

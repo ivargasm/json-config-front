@@ -4,7 +4,7 @@ import { useState } from "react";
 import ProtectedRoute from "../components/ProtectedRoutes";
 import TopNavbar from "../components/TopNavbar";
 import { usePresetReportStore } from "../store/presetReportStore";
-import { Database, Code2, Play, LayoutList, Zap, AlertCircle, Upload } from "lucide-react";
+import { Database, Code2, Play, LayoutList, Zap, AlertCircle, Upload, RotateCcw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { parsePredefinedColumns } from "../lib/api";
 import PresetMetadataForm from "./components/PresetMetadataForm";
@@ -15,6 +15,7 @@ export default function PresetReportBuilder() {
   const store = usePresetReportStore();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   const handleAnalyzeSql = async () => {
     if (!store.mainSql) {
@@ -83,6 +84,14 @@ export default function PresetReportBuilder() {
           </div>
           
           <div className="flex gap-3">
+            <button 
+              type="button"
+              onClick={() => setConfirmResetOpen(true)}
+              className="flex items-center gap-2 border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 hover:text-rose-700 text-slate-700 px-3.5 py-1.5 rounded-md font-medium text-sm shadow-sm transition-colors"
+              title="Iniciar una nueva configuración de Preset y limpiar el espacio de trabajo"
+            >
+              <RotateCcw size={15} className="text-slate-400 group-hover:text-rose-600" /> Nuevo Preset
+            </button>
             <label className="flex items-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-4 py-1.5 rounded-md font-medium text-sm shadow-sm transition-colors cursor-pointer">
               <Upload size={16} className="text-slate-500" /> Importar JSON
               <input type="file" accept=".json" className="hidden" onChange={handleImportJSON} />
@@ -165,6 +174,45 @@ export default function PresetReportBuilder() {
       </div>
 
       {drawerOpen && <PresetOutputsDrawer onClose={() => setDrawerOpen(false)} />}
+
+      {/* Modal de Confirmación para Nuevo Preset */}
+      {confirmResetOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-rose-100 text-rose-600 rounded-full shrink-0">
+                <AlertTriangle size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-slate-900">¿Iniciar un nuevo Preset Report?</h3>
+                <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
+                  Esta acción limpiará la consulta SQL, las variables seleccionadas y todas las columnas mapeadas ({store.columns.length}) para comenzar desde cero.
+                </p>
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmResetOpen(false)}
+                    className="px-4 py-2 border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      store.clearStore();
+                      setConfirmResetOpen(false);
+                      toast.success("Espacio de trabajo reiniciado. Nuevo preset listo.");
+                    }}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2"
+                  >
+                    <RotateCcw size={15} /> Sí, Limpiar Todo
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </ProtectedRoute>
   );
 }
