@@ -133,9 +133,19 @@ export const useMobileReportStore = create<MobileReportState>()(
     clearFilters: () => set({ filters: [], generic_filters: [], filters_properties: {} }),
 
     addComponent: (component) =>
-        set((state) => ({
-            components: [...state.components, component],
-        })),
+        set((state) => {
+            const exists = state.components.some((c) => c.id === component.id);
+            if (exists) {
+                return {
+                    components: state.components.map((c) =>
+                        c.id === component.id ? { ...c, ...component } : c
+                    ),
+                };
+            }
+            return {
+                components: [...state.components, component],
+            };
+        }),
 
     updateComponent: (id, updated) =>
         set((state) => ({

@@ -152,48 +152,49 @@ export default function MobileReportBuilder() {
               </button>
             </div>
             
-            {leftTab === 'build' ? (
-              <>
-                <div className="flex-1 overflow-y-auto p-3 space-y-1">
-              {/* Base / Filters */}
-              <button 
-                onClick={() => setSelectedItem("filters")}
-                className={"w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors " + (selectedItem === "filters" ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50")}
-              >
-                <Settings2 size={16} className={selectedItem === "filters" ? "text-indigo-600" : "text-slate-400"} />
-                Filtros Globales
-              </button>
+            {/* Tab Estructura */}
+            <div className={`flex flex-col flex-1 overflow-hidden ${leftTab === 'build' ? '' : 'hidden'}`}>
+              <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                {/* Base / Filters */}
+                <button 
+                  onClick={() => setSelectedItem("filters")}
+                  className={"w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors " + (selectedItem === "filters" ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50")}
+                >
+                  <Settings2 size={16} className={selectedItem === "filters" ? "text-indigo-600" : "text-slate-400"} />
+                  Filtros Globales
+                </button>
 
-              <div className="pt-4 pb-1 px-3 flex justify-between items-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Componentes</span>
-                <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px]">{components.length}</span>
+                <div className="pt-4 pb-1 px-3 flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Componentes</span>
+                  <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px]">{components.length}</span>
+                </div>
+                
+                {components.map((c) => (
+                  <button 
+                    key={c.id}
+                    onClick={() => setSelectedItem(c.id)}
+                    className={"w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors " + (selectedItem === c.id ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50")}
+                  >
+                    <LayoutList size={16} className={selectedItem === c.id ? "text-indigo-600" : "text-slate-400"} />
+                    <span className="truncate">{c.title || c.id}</span>
+                  </button>
+                ))}
               </div>
               
-              {components.map((c) => (
+              <div className="p-4 border-t border-slate-100 bg-slate-50">
                 <button 
-                  key={c.id}
-                  onClick={() => setSelectedItem(c.id)}
-                  className={"w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors " + (selectedItem === c.id ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50")}
+                  onClick={() => setAddModalOpen(true)}
+                  className="w-full flex justify-center items-center gap-2 bg-white border border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
                 >
-                  <LayoutList size={16} className={selectedItem === c.id ? "text-indigo-600" : "text-slate-400"} />
-                  <span className="truncate">{c.title || c.id}</span>
+                  <Plus size={16} /> Añadir Componente
                 </button>
-              ))}
+              </div>
+            </div>
 
-            </div>
-            
-            <div className="p-4 border-t border-slate-100 bg-slate-50">
-              <button 
-                onClick={() => setAddModalOpen(true)}
-                className="w-full flex justify-center items-center gap-2 bg-white border border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                <Plus size={16} /> Añadir Componente
-              </button>
-            </div>
-              </>
-            ) : (
+            {/* Tab Asistente IA (se mantiene montado en el DOM para conservar el historial del chat) */}
+            <div className={`flex flex-col flex-1 overflow-hidden ${leftTab === 'ai' ? '' : 'hidden'}`}>
               <AIChatPanel />
-            )}
+            </div>
           </div>
 
           {/* Main Configuration Canvas */}
@@ -355,7 +356,6 @@ export default function MobileReportBuilder() {
         onClose={() => setDocsModalOpen(false)}
         initialComponentType={docsTargetType}
       />
-
     </ProtectedRoute>
   );
 }
