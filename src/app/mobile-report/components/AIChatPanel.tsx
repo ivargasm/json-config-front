@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Bot, User, Loader2, RotateCcw } from 'lucide-react';
+import { Send, Sparkles, Bot, User, Loader2, RotateCcw, Database } from 'lucide-react';
 import { toast } from 'sonner';
 import { sendMobileReportChat } from '../../lib/api';
 import { useMobileReportStore } from '../../store/mobileReportStore';
@@ -71,12 +71,17 @@ export default function AIChatPanel() {
     <div className="flex flex-col flex-1 overflow-hidden bg-slate-50 relative">
       {/* Cabecera del Chat con Reset de Contexto */}
       <div className="px-3.5 py-2 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-xs">
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-          <Sparkles size={14} className="text-indigo-600" />
-          <span>Memoria Asistente</span>
-          {messages.length > 1 && (
-            <span className="text-[10px] text-slate-400 font-mono">({messages.length - 1} mensajes)</span>
-          )}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+            <Sparkles size={14} className="text-indigo-600" />
+            <span>Asistente Mobile</span>
+            {messages.length > 1 && (
+              <span className="text-[10px] text-slate-400 font-mono">({messages.length - 1} mensajes)</span>
+            )}
+          </div>
+          <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-medium border border-emerald-200 flex items-center gap-1" title="El asistente consulta las tablas reales de Cerebro Global">
+            <Database size={10} /> Cerebro Global
+          </span>
         </div>
         <button
           type="button"

@@ -11,7 +11,7 @@ export interface ChatMessage {
 export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
   { 
     role: 'assistant', 
-    content: '¡Hola! Soy tu Asistente IA Arquitecto de Reportes.\n\n**¿Qué SÍ puedo hacer?**\n✅ Crear o eliminar componentes visuales.\n✅ Configurar colores, semáforos y reglas de ocultamiento (`show_when`).\n✅ Conectar interacciones (ej. "Al dar clic aquí, muestra este otro componente").\n\n**¿Qué NO puedo hacer?**\n❌ No genero código SQL. Si me pides un componente nuevo, yo te armaré el "cascarón" perfecto y tú deberás usar el Asistente SQL (en la pestaña Estructura) para inyectarle los datos.\n\n¿Qué quieres que construyamos hoy?' 
+    content: '¡Hola! Soy tu Asistente IA para Reportes Mobile.\n\n🧠 **Conectado a Cerebro Global**: Conozco las tablas reales de Storecheck (`d_product`, `f_visit`, `d_place`, `calendar`, etc.).\n\n**¿Qué puedo hacer por ti?**\n✅ Crear y diseñar los 18 tipos de componentes de Storecheck con sus consultas SQL reales.\n✅ Configurar reglas de visibilidad (`show_when`, `hide_when`) e interacciones al dar clic.\n✅ Crear subtablas o drilldowns anidados (`detail`).\n✅ Aplicar reglas estrictas de Storecheck (sin `::`, con `project_` en CTEs y filtros `LOWER`).\n\n¿Qué componente o sección deseas construir hoy?' 
   }
 ];
 

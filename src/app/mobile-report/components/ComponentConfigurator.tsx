@@ -6,6 +6,7 @@ import { Database, Code2, Settings, Plus, Trash2, Zap, Eye, BookOpen } from "luc
 import { TableColumn, ResumeRow, ComponentType } from "../../types/mobileReport";
 import { toast } from "sonner";
 import { parseColumns } from "../../lib/api";
+import SqlValidationAlerts from "./SqlValidationAlerts";
 
 interface ComponentConfiguratorProps {
   componentId: string;
@@ -656,6 +657,10 @@ export default function ComponentConfigurator({ componentId, onOpenDocs }: Compo
               <div className="rounded-md border border-slate-200 overflow-hidden bg-slate-900 shadow-inner">
                 <textarea value={component.datasource || ""} onChange={(e) => updateComponent(component.id, { datasource: e.target.value })} className="w-full bg-transparent text-emerald-400 p-4 text-sm font-mono h-32 focus:outline-none resize-y" spellCheck="false" />
               </div>
+              <SqlValidationAlerts 
+                sql={component.datasource} 
+                onFixSql={(fixed) => updateComponent(component.id, { datasource: fixed })} 
+              />
             </div>
 
             {(component.type === "resume") && (
@@ -666,6 +671,10 @@ export default function ComponentConfigurator({ componentId, onOpenDocs }: Compo
                 <div className="rounded-md border border-slate-200 overflow-hidden bg-slate-900 shadow-inner">
                   <textarea value={component.last_date_datasource || ""} onChange={(e) => updateComponent(component.id, { last_date_datasource: e.target.value })} className="w-full bg-transparent text-indigo-300 p-3 text-sm font-mono h-12 focus:outline-none resize-y" spellCheck="false" placeholder="SELECT to_char(MAX(date)...)" />
                 </div>
+                <SqlValidationAlerts 
+                  sql={component.last_date_datasource} 
+                  onFixSql={(fixed) => updateComponent(component.id, { last_date_datasource: fixed })} 
+                />
               </div>
             )}
 
@@ -677,6 +686,10 @@ export default function ComponentConfigurator({ componentId, onOpenDocs }: Compo
                 <div className="rounded-md border border-slate-200 overflow-hidden bg-slate-900 shadow-inner">
                   <textarea value={component.count_datasource || ""} onChange={(e) => updateComponent(component.id, { count_datasource: e.target.value })} className="w-full bg-transparent text-indigo-300 p-3 text-sm font-mono h-20 focus:outline-none resize-y" spellCheck="false" />
                 </div>
+                <SqlValidationAlerts 
+                  sql={component.count_datasource} 
+                  onFixSql={(fixed) => updateComponent(component.id, { count_datasource: fixed })} 
+                />
               </div>
             )}
           </div>

@@ -1,6 +1,7 @@
+import { useState } from "react";
+import SqlValidationAlerts from "./SqlValidationAlerts";
 "use client";
 
-import { useState } from "react";
 import { useMobileReportStore } from "../../store/mobileReportStore";
 import { Trash2, Plus, Code2, Database, Settings } from "lucide-react";
 
@@ -139,6 +140,10 @@ export default function GlobalFiltersForm() {
                     className="w-full bg-slate-900 text-emerald-400 font-mono text-sm p-3 rounded-md h-24 focus:outline-none resize-none"
                     spellCheck="false"
                   />
+                  <SqlValidationAlerts 
+                    sql={gf.datasource} 
+                    onFixSql={(fixed) => updateGenericFilter({...gf, datasource: fixed})} 
+                  />
                 </div>
 
                 <div>
@@ -148,6 +153,10 @@ export default function GlobalFiltersForm() {
                     onChange={e => updateGenericFilter({...gf, count_datasource: e.target.value})}
                     className="w-full bg-slate-900 text-indigo-300 font-mono text-sm p-3 rounded-md h-16 focus:outline-none resize-none"
                     spellCheck="false"
+                  />
+                  <SqlValidationAlerts 
+                    sql={gf.count_datasource} 
+                    onFixSql={(fixed) => updateGenericFilter({...gf, count_datasource: fixed})} 
                   />
                 </div>
               </div>
