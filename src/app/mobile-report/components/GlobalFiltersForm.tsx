@@ -1,6 +1,7 @@
+"use client";
+
 import { useState } from "react";
 import SqlValidationAlerts from "./SqlValidationAlerts";
-"use client";
 
 import { useMobileReportStore } from "../../store/mobileReportStore";
 import { Trash2, Plus, Code2, Database, Settings } from "lucide-react";
